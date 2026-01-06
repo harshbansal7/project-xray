@@ -1,0 +1,94 @@
+# =========================
+# Go
+# =========================
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+coverage.out
+coverage.html
+vendor/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.manifest
+*.spec
+
+# =========================
+# Virtual Environments
+# =========================
+.env
+.venv
+env/
+venv/
+ENV/
+
+# =========================
+# IDE / Editor
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# =========================
+# X-Ray Specific
+# =========================
+# SDK fallback data
+xray_demo_fallback/
+xray_backup/
+
+# Local DynamoDB data (if running outside Docker)
+.dynamodb/
+
+# API docs (generated)
+api/docs/swagger.json
+api/docs/swagger.yaml
+api/docs/docs.go
+
+# =========================
+# Docker
+# =========================
+*.log
+docker-compose.override.yml

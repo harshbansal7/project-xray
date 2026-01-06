@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  # Local DynamoDB
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    container_name: xray-dynamodb
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb"]
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Table initialization (runs once, creates table if not exists)
+  dynamodb-init:
+    image: amazon/aws-cli:latest
+    container_name: xray-dynamodb-init
+    depends_on:
+      dynamodb:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: ["/bin/bash", "/scripts/init-dynamodb.sh"]
+    restart: "no"
+
+  # X-Ray API
+  api:
+    build: ./api
+    container_name: xray-api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
+      - DYNAMODB_TABLE=xray_data
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+    depends_on:
+      dynamodb-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # DynamoDB Admin UI (optional)
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: xray-dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://dynamodb:8000
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+    depends_on:
+      dynamodb:
+        condition: service_healthy
+
+volumes:
+  dynamodb_data:
