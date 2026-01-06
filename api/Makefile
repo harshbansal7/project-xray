@@ -16,6 +16,9 @@ run:
 run-local:
 	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local DYNAMODB_ENDPOINT=http://localhost:8000 go run $(MAIN_PATH)/main.go
 
+dynamdb-admin:
+	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local DYNAMODB_ENDPOINT=http://localhost:8000 dynamodb-admin
+
 # Generate Swagger docs
 swagger:
 	swag init -g cmd/server/main.go -o docs
