@@ -7,14 +7,14 @@ X-Ray provides visibility into _why_ decisions were made in non-deterministic sy
 ### 1. Start the Backend
 
 ```bash
-docker-compose up
+make run
 ```
 
 This starts:
 
-- DynamoDB Local (port 8000)
+- ClickHouse (port 8123)
 - X-Ray API (port 8080)
-- DynamoDB Admin UI (port 8001) - optional
+- Dashboard (port 3000)
 
 ### 2. Install the SDK
 
@@ -56,7 +56,16 @@ with xray.trace(MyPipelines.SEARCH) as t:
         e.set_output(filtered)
 ```
 
-### 4. Query Your Data
+### 4. View in Dashboard
+
+Open http://localhost:3000 to see:
+
+- Pipeline overview and stats
+- Trace timeline with events
+- Decision breakdowns by reason code
+- Item history across pipeline runs
+
+### 5. Query via API
 
 ```bash
 # Get a trace
@@ -69,6 +78,15 @@ curl 'http://localhost:8080/api/v1/query/events?step_type=filter&min_reduction_r
 curl http://localhost:8080/api/v1/traces/{trace_id}/events/{event_id}/decisions
 ```
 
+## Makefile Commands
+
+```bash
+make run        # Start all services (ClickHouse, API, Dashboard)
+make stop       # Stop all services
+make clear-db   # Delete all data from ClickHouse
+make logs       # View API logs
+```
+
 ## Project Structure
 
 ```
@@ -77,8 +95,7 @@ curl http://localhost:8080/api/v1/traces/{trace_id}/events/{event_id}/decisions
 │   ├── internal/
 │   │   ├── handlers/    # HTTP handlers (ingest + query)
 │   │   ├── models/      # Data models
-│   │   └── store/       # DynamoDB implementation
-│   └── Makefile
+│   │   └── store/       # ClickHouse implementation
 ├── sdk/python/          # Python SDK
 │   ├── xray_sdk/
 │   │   ├── trace.py     # Trace context manager
@@ -86,6 +103,7 @@ curl http://localhost:8080/api/v1/traces/{trace_id}/events/{event_id}/decisions
 │   │   ├── client.py    # Async HTTP client
 │   │   └── config.py    # Configuration + registry
 │   └── examples/
+├── dashboard/           # Next.js dashboard
 ├── docker-compose.yml   # Full stack setup
 └── ARCHITECTURE.md      # Design decisions + trade-offs
 ```
@@ -106,8 +124,8 @@ curl http://localhost:8080/api/v1/traces/{trace_id}/events/{event_id}/decisions
 
 **Storage:**
 
-- DynamoDB single-table design with 4 GSIs for efficient queries
-- No table scans—all queries use indexes
+- ClickHouse columnar database for high-performance analytics
+- ReplacingMergeTree for trace deduplication
 - TTL-based auto-expiration (90 days)
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed design rationale.
@@ -115,19 +133,13 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed design rationale.
 ## Known Limitations
 
 1. **No authentication**: API is currently open. Production would need API keys + RBAC.
-
-2. **No UI**: Query via API/curl only. A debug dashboard would help visualization.
-
-3. **Python SDK only**: Go/TypeScript SDKs not implemented yet.
-
-4. **Limited query patterns**: Complex queries (e.g., "decisions where score.price > 100") require client-side filtering.
-
-5. **Large item snapshots**: Storing full item state can get expensive. Consider compression or tiered storage.
+2. **Python SDK only**: Go/TypeScript SDKs not implemented yet.
+3. **Limited query patterns**: Complex queries require client-side filtering.
+4. **Large item snapshots**: Storing full item state can get expensive.
 
 ## Future Improvements
 
 - Authentication and multi-tenancy
-- Web dashboard for trace visualization
 - Additional SDKs (Go, TypeScript)
 - Compression for large payloads
 - Natural language querying

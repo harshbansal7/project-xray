@@ -1,6 +1,6 @@
 // Package store defines the abstract storage interface for X-Ray data.
 // This allows swapping between different database implementations
-// (DynamoDB, MongoDB, PostgreSQL, Cassandra, etc.) without changing business logic.
+// (ClickHouse, PostgreSQL, etc.) without changing business logic.
 package store
 
 import (
@@ -29,7 +29,7 @@ type Store interface {
 	// Decision operations
 	CreateDecision(ctx context.Context, decision *models.Decision) error
 	GetDecisionsByEvent(ctx context.Context, eventID string, opts *DecisionQueryOpts) (*DecisionPage, error)
-	GetDecisionsByItem(ctx context.Context, itemID string, limit int) ([]*models.Decision, error)
+	QueryDecisions(ctx context.Context, opts *DecisionQueryOpts) (*DecisionPage, error)
 	BatchCreateDecisions(ctx context.Context, decisions []*models.Decision) error
 
 	// Query operations
@@ -56,6 +56,7 @@ type TraceQueryOpts struct {
 	EndTime    *time.Time
 	Status     *string
 	Tags       []string
+	Metadata   map[string]string
 	Limit      int
 	Cursor     *string
 }
@@ -74,6 +75,9 @@ type EventQueryOpts struct {
 
 // DecisionQueryOpts defines options for querying decisions
 type DecisionQueryOpts struct {
+	TraceID    *string
+	PipelineID *string
+	StepName   *string
 	Outcome    *string
 	ReasonCode *string
 	ItemID     *string

@@ -1,36 +1,28 @@
-version: "3.8"
-
 services:
-  # Local DynamoDB
-  dynamodb:
-    image: amazon/dynamodb-local:latest
-    container_name: xray-dynamodb
+  # ClickHouse Database
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    container_name: xray-clickhouse
     ports:
-      - "8000:8000"
-    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb"]
+      - "8123:8123" # HTTP interface
+      - "9000:9000" # Native protocol
     volumes:
-      - dynamodb_data:/home/dynamodblocal/data
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    environment:
+      - CLICKHOUSE_DB=xray
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:8000 || exit 1"]
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
       interval: 5s
       timeout: 5s
       retries: 10
-
-  # Table initialization (runs once, creates table if not exists)
-  dynamodb-init:
-    image: amazon/aws-cli:latest
-    container_name: xray-dynamodb-init
-    depends_on:
-      dynamodb:
-        condition: service_healthy
-    environment:
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-      - AWS_DEFAULT_REGION=us-east-1
-    volumes:
-      - ./scripts:/scripts:ro
-    entrypoint: ["/bin/bash", "/scripts/init-dynamodb.sh"]
-    restart: "no"
+    restart: unless-stopped
 
   # X-Ray API
   api:
@@ -40,30 +32,16 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      - DYNAMODB_ENDPOINT=http://dynamodb:8000
-      - DYNAMODB_TABLE=xray_data
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-      - AWS_REGION=us-east-1
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
+      - CLICKHOUSE_DB=xray
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
     depends_on:
-      dynamodb-init:
-        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
     restart: unless-stopped
 
-  # DynamoDB Admin UI (optional)
-  dynamodb-admin:
-    image: aaronshaf/dynamodb-admin:latest
-    container_name: xray-dynamodb-admin
-    ports:
-      - "8001:8001"
-    environment:
-      - DYNAMO_ENDPOINT=http://dynamodb:8000
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-      - AWS_REGION=us-east-1
-    depends_on:
-      dynamodb:
-        condition: service_healthy
-
 volumes:
-  dynamodb_data:
+  clickhouse_data:
+  clickhouse_logs:

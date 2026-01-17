@@ -38,7 +38,7 @@ class Trace:
     ):
         """
         Create a new Trace.
-
+        
         Args:
             pipeline_id: Pipeline identifier (XRayPipelineID enum value recommended).
             input_data: The original input to the pipeline.
@@ -100,14 +100,14 @@ class Trace:
     ) -> Generator[Event, None, None]:
         """
         Create a new event within this trace.
-
+        
         Args:
             step_name: Human-readable name for this step.
             step_type: XRayStepType enum value (recommended) or string.
             capture: How much detail to capture: "metrics", "sample", or "full".
             sampling_config: Override trace-level sampling config for this event.
             **annotations: Additional annotations to attach.
-
+        
         Yields:
             Event context manager.
         """
@@ -156,22 +156,22 @@ def trace(
 ) -> Generator[Trace, None, None]:
     """
     Create a new trace for a pipeline execution.
-
+    
     This is the main entry point for X-Ray instrumentation.
-
+    
     Args:
         pipeline_id: Pipeline identifier (XRayPipelineID enum value recommended).
         input_data: The original input to the pipeline.
         metadata: Arbitrary metadata to attach.
         tags: Tags for filtering.
         sampling_config: Configurable sampling rates per outcome type.
-
+    
     Yields:
         Trace context manager.
     
     Example:
         >>> from xray_sdk import SamplingConfig
-        >>>
+        >>> 
         >>> # Custom sampling: always index rejections, sample 10% of acceptances
         >>> sampling = SamplingConfig({"rejected": 1.0, "accepted": 0.1})
         >>>

@@ -7,6 +7,8 @@ type CreateTraceRequest struct {
 	TraceID    string                 `json:"trace_id"`
 	PipelineID string                 `json:"pipeline_id" validate:"required"`
 	StartedAt  string                 `json:"started_at" validate:"required"`
+	EndedAt    *string                `json:"ended_at,omitempty"`
+	Status     string                 `json:"status,omitempty"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 	InputData  interface{}            `json:"input_data,omitempty"`
 	Tags       []string               `json:"tags,omitempty"`
@@ -67,15 +69,17 @@ type BatchDecisionsRequest struct {
 
 // QueryRequest is the request body for querying
 type QueryRequest struct {
-	PipelineID        *string  `json:"pipeline_id,omitempty"`
-	StepType          *string  `json:"step_type,omitempty"`
-	MinReductionRatio *float64 `json:"min_reduction_ratio,omitempty"`
-	TimeRange         *string  `json:"time_range,omitempty"` // last_24h, last_7d, etc.
-	StartTime         *string  `json:"start_time,omitempty"`
-	EndTime           *string  `json:"end_time,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
-	Limit             int      `json:"limit,omitempty"`
-	Cursor            *string  `json:"cursor,omitempty"`
+	PipelineID        *string           `json:"pipeline_id,omitempty"`
+	StepType          *string           `json:"step_type,omitempty"`
+	StepName          *string           `json:"step_name,omitempty"`
+	MinReductionRatio *float64          `json:"min_reduction_ratio,omitempty"`
+	TimeRange         *string           `json:"time_range,omitempty"` // last_24h, last_7d, etc.
+	StartTime         *string           `json:"start_time,omitempty"`
+	EndTime           *string           `json:"end_time,omitempty"`
+	Tags              []string          `json:"tags,omitempty"`
+	Metadata          map[string]string `json:"metadata,omitempty"`
+	Limit             int               `json:"limit,omitempty"`
+	Cursor            *string           `json:"cursor,omitempty"`
 }
 
 // APIResponse is a generic API response

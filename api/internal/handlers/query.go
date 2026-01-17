@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -61,6 +62,22 @@ func (h *QueryHandler) QueryTraces(w http.ResponseWriter, r *http.Request) {
 
 	if pipelineID := r.URL.Query().Get("pipeline_id"); pipelineID != "" {
 		opts.PipelineID = &pipelineID
+	}
+
+	if tagsStr := r.URL.Query().Get("tags"); tagsStr != "" {
+		opts.Tags = strings.Split(tagsStr, ",")
+	}
+
+	// Parse metadata metadata filters: meta:key=value
+	metadata := make(map[string]string)
+	for key, values := range r.URL.Query() {
+		if strings.HasPrefix(key, "meta:") && len(values) > 0 {
+			metaKey := strings.TrimPrefix(key, "meta:")
+			metadata[metaKey] = values[0]
+		}
+	}
+	if len(metadata) > 0 {
+		opts.Metadata = metadata
 	}
 
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
@@ -132,16 +149,15 @@ func (h *QueryHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Compute decision summary
+	// Compute decision summary with dynamic outcome aggregation
 	totalDecisions := len(decisionsPage.Decisions)
-	acceptedCount := 0
-	rejectedCount := 0
+	outcomeCounts := make(map[string]int)
+	reasonCounts := make(map[string]int)
 
 	for _, decision := range decisionsPage.Decisions {
-		if decision.Outcome == "accepted" {
-			acceptedCount++
-		} else if decision.Outcome == "rejected" {
-			rejectedCount++
+		outcomeCounts[decision.Outcome]++
+		if decision.ReasonCode != nil && *decision.ReasonCode != "" {
+			reasonCounts[*decision.ReasonCode]++
 		}
 	}
 
@@ -156,9 +172,9 @@ func (h *QueryHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 		},
 		"metrics": event.Metrics, // Metrics is already a map
 		"decisions": map[string]interface{}{
-			"total":    totalDecisions,
-			"accepted": acceptedCount,
-			"rejected": rejectedCount,
+			"total":        totalDecisions,
+			"outcomes":     outcomeCounts,
+			"reason_codes": reasonCounts,
 		},
 	}
 
@@ -177,6 +193,10 @@ func (h *QueryHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 func (h *QueryHandler) QueryEvents(w http.ResponseWriter, r *http.Request) {
 	opts := &store.EventQueryOpts{
 		Limit: 100,
+	}
+
+	if pipelineID := r.URL.Query().Get("pipeline_id"); pipelineID != "" {
+		opts.PipelineID = &pipelineID
 	}
 
 	if stepType := r.URL.Query().Get("step_type"); stepType != "" {
@@ -258,39 +278,6 @@ func (h *QueryHandler) GetDecisionsByEvent(w http.ResponseWriter, r *http.Reques
 	})
 }
 
-// GetItemHistory handles GET /api/v1/items/{itemId}/history
-// @Summary Get decision history for an item
-// @Tags items
-// @Produce json
-// @Param itemId path string true "Item ID"
-// @Param limit query int false "Max results"
-// @Success 200 {array} models.Decision
-// @Router /items/{itemId}/history [get]
-func (h *QueryHandler) GetItemHistory(w http.ResponseWriter, r *http.Request) {
-	itemID := chi.URLParam(r, "itemId")
-
-	limit := 100
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	}
-
-	decisions, err := h.store.GetDecisionsByItem(r.Context(), itemID, limit)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "failed to get item history", err.Error())
-		return
-	}
-
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"item_id":     itemID,
-		"decisions":   decisions,
-		"count":       len(decisions),
-		"_note":       "Item history uses sparse indexing: ALL rejected decisions + 1% sampled accepted decisions",
-		"is_complete": false, // Always indicate incompleteness for transparency
-	})
-}
-
 // Query handles POST /api/v1/query
 // @Summary Advanced query
 // @Tags query
@@ -336,6 +323,7 @@ func (h *QueryHandler) Query(w http.ResponseWriter, r *http.Request) {
 	opts := &store.TraceQueryOpts{
 		PipelineID: req.PipelineID,
 		Tags:       req.Tags,
+		Metadata:   req.Metadata,
 		Limit:      req.Limit,
 	}
 	if opts.Limit == 0 {
@@ -352,6 +340,47 @@ func (h *QueryHandler) Query(w http.ResponseWriter, r *http.Request) {
 		Results:    page.Traces,
 		NextCursor: page.NextCursor,
 		Count:      len(page.Traces),
+	})
+}
+
+// QueryDecisions handles GET /api/v1/query/decisions
+// @Summary Query decisions across traces/events
+// @Tags query
+// @Produce json
+// @Param pipeline_id query string false "Filter by pipeline ID"
+// @Param step_name query string false "Filter by step name"
+// @Param limit query int false "Max results"
+// @Success 200 {object} models.PaginatedResponse
+// @Router /query/decisions [get]
+func (h *QueryHandler) QueryDecisions(w http.ResponseWriter, r *http.Request) {
+	opts := &store.DecisionQueryOpts{
+		Limit: 100,
+	}
+
+	if pipelineID := r.URL.Query().Get("pipeline_id"); pipelineID != "" {
+		opts.PipelineID = &pipelineID
+	}
+
+	if stepName := r.URL.Query().Get("step_name"); stepName != "" {
+		opts.StepName = &stepName
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
+			opts.Limit = limit
+		}
+	}
+
+	page, err := h.store.QueryDecisions(r.Context(), opts)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to query decisions", err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, models.PaginatedResponse{
+		Results:    page.Decisions,
+		NextCursor: page.NextCursor,
+		Count:      len(page.Decisions),
 	})
 }
 

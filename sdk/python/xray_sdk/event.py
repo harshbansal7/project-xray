@@ -45,7 +45,7 @@ class Event:
     ):
         """
         Create a new Event.
-
+        
         Args:
             trace_id: The trace this event belongs to.
             step_name: Human-readable name for this step.
@@ -65,6 +65,15 @@ class Event:
             pid = pipeline_id.value if isinstance(pipeline_id, Enum) else str(pipeline_id)
             if is_pipeline_registered(pid):
                 validate_step_type(pid, step_type_str)
+            elif get_config().debug:
+                # Warn if pipeline is used but not registered
+                import warnings
+                warnings.warn(
+                    f"Pipeline '{pid}' is not registered. Step type validation is disabled. "
+                    f"Call xray.register_pipeline() to enable strict type checking.",
+                    UserWarning,
+                    stacklevel=4
+                )
         
         # Validate capture mode
         try:
@@ -208,7 +217,7 @@ class Event:
         # FULL mode: should_sample remains True (sample all)
 
         if not should_sample:
-            return
+                return
         
         # Check limit
         if len(self._decisions) >= self._config.max_decisions_per_event:

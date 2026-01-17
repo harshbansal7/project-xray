@@ -15,7 +15,7 @@ Requires: GROQ_API_KEY environment variable
 import os
 import json
 from typing import List, Dict, Any, Tuple
-
+import random
 from groq import Groq
 
 import xray_sdk as xray
@@ -77,10 +77,11 @@ xray.configure(
 
 xray.register_pipeline(Pipelines.COMPETITOR_SELECTION, Steps, Reasons)
 
-# Sampling: Always capture rejections, sample 10% of acceptances
+# Sampling: Always capture rejections, and capture all acceptances for demo visibility
 sampling = SamplingConfig({
     "rejected": 1.0,
-    "accepted": 0.1,
+    "accepted": 1.0,
+    "*": 1.0,  # Capture all other outcomes (happy, sad, crazy, etc.)
 })
 
 
@@ -200,7 +201,15 @@ Example: {{"min_price": 500, "max_price": 1500, "min_rating": 4.0, "min_reviews"
 
     raw = call_llm(client, prompt)
     print(f"  [DEBUG] Raw filter response: {raw[:200]}")
-    return parse_json_response(raw)
+    filters = parse_json_response(raw)
+
+    # Relax min_price by 20% to ensure some items pass (demo purposes)
+    if "min_price" in filters:
+        original = filters["min_price"]
+        filters["min_price"] = float(original) * 0.8
+        print(f"  [ADJUST] Relaxed min_price from {original} to {filters['min_price']}")
+        
+    return filters
 
 
 def rank_candidates(client: Groq, candidates: List[Dict], base_product: Dict) -> List[Dict]:
@@ -289,7 +298,7 @@ def apply_filters(
             reason_code, reason_detail = rejection_reasons[0]
             decisions.append({
                 "item_id": item_id,
-                "outcome": "rejected",
+                "outcome": "sadest",
                 "reason_code": reason_code,
                 "reason_detail": reason_detail,
                 "scores": scores,
@@ -299,7 +308,7 @@ def apply_filters(
             passed.append(product)
             decisions.append({
                 "item_id": item_id,
-                "outcome": "accepted",
+                "outcome": "happy" if random.random() > 0.5 else "crazy",
                 "reason_code": "PASSED_ALL_FILTERS",
                 "reason_detail": "Met all filter criteria",
                 "scores": scores,

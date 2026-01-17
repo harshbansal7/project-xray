@@ -37,7 +37,10 @@ class SamplingConfig:
 
         Uses deterministic hashing for consistent sampling of the same item.
         """
-        rate = self.outcome_rates.get(outcome, 0.01)  # Default 1% if outcome not specified
+        # Check for specific outcome rate, then wildcard, then default 1%
+        rate = self.outcome_rates.get(outcome)
+        if rate is None:
+            rate = self.outcome_rates.get("*", 0.01)
 
         if rate >= 1.0:
             return True  # Always sample
@@ -178,6 +181,7 @@ def register_pipeline(
     
     Raises:
         TypeError: If step_types is not an XRayStepType subclass.
+        TypeError: If any step type member does not have a string value.
     
     Example:
         from xray_sdk import XRayStepType, XRayPipelineID, XRayReasonCode
@@ -218,6 +222,15 @@ def register_pipeline(
             "Define your step types as: class MySteps(XRayStepType): ..."
         )
     
+    # Validate that all step type members have string values
+    for member in step_types:
+        if not isinstance(member.value, str):
+            raise TypeError(
+                f"Step type '{member.name}' must have a string value, "
+                f"got {type(member.value).__name__}: {member.value!r}. "
+                f"Define as: {member.name} = \"some_value\""
+            )
+    
     # Extract step type values
     step_values = {member.value for member in step_types}
     _pipeline_registry[pid] = step_values
@@ -229,6 +242,16 @@ def register_pipeline(
                 f"reason_codes must be an XRayReasonCode subclass, got {type(reason_codes).__name__}. "
                 "Define your reason codes as: class MyReasons(XRayReasonCode): ..."
             )
+        
+        # Validate that all reason code members have string values
+        for member in reason_codes:
+            if not isinstance(member.value, str):
+                raise TypeError(
+                    f"Reason code '{member.name}' must have a string value, "
+                    f"got {type(member.value).__name__}: {member.value!r}. "
+                    f"Define as: {member.name} = \"SOME_VALUE\""
+                )
+        
         reason_values = {member.value for member in reason_codes}
         _reason_code_registry[pid] = reason_values
     
@@ -237,6 +260,7 @@ def register_pipeline(
         print(f"       Step types: {step_values}")
         if reason_codes:
             print(f"       Reason codes: {_reason_code_registry.get(pid, set())}")
+
 
 
 def register_reason_codes(reason_codes: Type[XRayReasonCode]) -> None:

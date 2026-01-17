@@ -16,11 +16,11 @@ api/
 │   │   └── requests.go      # API request/response types
 │   └── store/               # Database abstraction
 │       ├── store.go         # Store interface (abstract)
-│       └── dynamodb/        # DynamoDB implementation
+│       └── clickhouse/      # ClickHouse implementation
 └── Makefile
 ```
 
-## Abstract Database Layer
+## Database Layer
 
 The `store.Store` interface abstracts all database operations:
 
@@ -34,44 +34,27 @@ type Store interface {
 }
 ```
 
-To add a new database (MongoDB, PostgreSQL, Cassandra):
-
-1. Create `internal/store/mongodb/mongodb.go`
-2. Implement the `Store` interface
-3. Update `main.go` to instantiate your new store
+Currently uses ClickHouse for high-performance columnar storage.
 
 ## Quick Start
 
-### Prerequisites
-
-- Go 1.21+
-- Docker (for local DynamoDB)
-- AWS CLI (optional, for table creation)
-
-### Run Locally
+### Run with Docker
 
 ```bash
-# Start local DynamoDB
-make dynamodb-local
-
-# Create table
-make create-table
-
-# Run server
-make run-local
+# From project root
+make run
 ```
 
 Server starts at `http://localhost:8080`
-Swagger UI at `http://localhost:8080/swagger/index.html`
 
 ### Environment Variables
 
-| Variable            | Default   | Description        |
-| ------------------- | --------- | ------------------ |
-| `PORT`              | 8080      | Server port        |
-| `DYNAMODB_ENDPOINT` | (AWS)     | Local DynamoDB URL |
-| `DYNAMODB_TABLE`    | xray_data | Table name         |
-| `AWS_REGION`        | us-east-1 | AWS region         |
+| Variable              | Default   | Description     |
+| --------------------- | --------- | --------------- |
+| `PORT`                | 8080      | Server port     |
+| `CLICKHOUSE_HOST`     | localhost | ClickHouse host |
+| `CLICKHOUSE_PORT`     | 9000      | ClickHouse port |
+| `CLICKHOUSE_DATABASE` | xray      | Database name   |
 
 ## API Endpoints
 
@@ -97,7 +80,6 @@ Swagger UI at `http://localhost:8080/swagger/index.html`
 | GET    | `/api/v1/traces/{id}/events/{eid}/decisions` | Get decisions         |
 | GET    | `/api/v1/items/{id}/history`                 | Item decision history |
 | GET    | `/api/v1/query/events`                       | Query events          |
-| POST   | `/api/v1/query`                              | Advanced query        |
 | GET    | `/health`                                    | Health check          |
 
 ## Example Requests
@@ -114,22 +96,6 @@ curl -X POST http://localhost:8080/api/v1/traces \
   }'
 ```
 
-### Create Event
-
-```bash
-curl -X POST http://localhost:8080/api/v1/events \
-  -H "Content-Type: application/json" \
-  -d '{
-    "trace_id": "<trace_id>",
-    "step_name": "filter_price",
-    "step_type": "filter",
-    "input_count": 1847,
-    "output_count": 312,
-    "started_at": "2024-01-05T10:00:01Z",
-    "metrics": {"reduction_ratio": 0.831}
-  }'
-```
-
 ### Query Filter Steps with High Reduction
 
 ```bash
@@ -142,51 +108,20 @@ curl "http://localhost:8080/api/v1/query/events?step_type=filter&min_reduction_r
 curl "http://localhost:8080/api/v1/items/ASIN-B08N5W/history"
 ```
 
-## DynamoDB Schema
+## ClickHouse Schema
 
-Production-grade single-table design with hierarchical keys (v2.0):
+Three main tables with columnar storage:
 
-### Base Table
+- `xray_traces` - Pipeline executions (ReplacingMergeTree for deduplication)
+- `xray_events` - Step events with metrics
+- `xray_decisions` - Item-level decisions with bloom filter on item_id
 
-| PK | SK | Entity |
-| --- | --- | --- |
-| `TRACE#<id>` | `TRACE#<date>#<time>` | Trace metadata |
-| `TRACE#<id>` | `EVENT#<date>#<time>#<event_id>` | Event under trace |
-| `TRACE#<id>` | `DEC#<event_id>#<date>#<time>#<decision_id>` | Decision under trace |
-
-**Key Benefits:**
-- ✅ Single query retrieves complete trace with all events and decisions
-- ✅ Natural time-based ordering within each trace
-- ✅ Efficient pagination support
-- ✅ No hot partitions (each trace is separate partition)
-
-### Global Secondary Indexes
-
-| Index | Purpose | PK | SK | Projection |
-| ----- | ------- | -- | -- | ---------- |
-| **GSI2** | Query traces by pipeline + time | `PIPELINE#<pipeline_id>` | `<date>#<time>#<trace_id>` | INCLUDE (status, metadata, tags) |
-| **GSI3** | Cross-pipeline event analytics | `STEP#<step_type>` or `STEP#<step_type>#<pipeline_id>` | `<reduction_ratio>#<date>#<event_id>` | INCLUDE (metrics, counts) |
-| **GSI4** | Event → Decisions with outcome filtering | `EVENT#<event_id>` | `<outcome>#<timestamp>#<decision_id>` | INCLUDE (item_id, reason_code, scores) |
-| **GSI5** | Item history tracking (SPARSE) | `ITEM#<item_id>` | `<date>#<trace_id>#<event_id>#<decision_id>` | INCLUDE (outcome, reason_code) |
-
-**GSI3 Dual-Write Strategy:** Each event writes twice:
-1. Global: `STEP#filter` - for cross-pipeline analytics
-2. Pipeline-specific: `STEP#filter#competitor-selection` - for pipeline-specific queries
-
-**GSI5 Sparse Indexing:** Only indexes:
-- ALL rejected decisions (for debugging)
-- 1% of accepted decisions (deterministic sampling via SHA256)
-
-**Storage Efficiency:** ~2.3× multiplier (vs 5× in naive design) = **54% cost savings**
+All tables have 90-day TTL for automatic data expiration.
 
 ## Testing
 
 ```bash
-# Run tests
 make test
-
-# With coverage
-make test-cover
 ```
 
 ## License

@@ -1,7 +1,7 @@
 // Package main is the entry point for X-Ray API server.
 //
 // @title X-Ray API
-// @version 1.0
+// @version 2.0
 // @description Reasoning-based observability API for multi-step decision pipelines
 //
 // @contact.name X-Ray Team
@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -28,15 +29,17 @@ import (
 	_ "github.com/xray-sdk/xray-api/docs" // Swagger docs
 	"github.com/xray-sdk/xray-api/internal/handlers"
 	"github.com/xray-sdk/xray-api/internal/store"
-	"github.com/xray-sdk/xray-api/internal/store/dynamodb"
+	"github.com/xray-sdk/xray-api/internal/store/clickhouse"
 )
 
 func main() {
 	// Configuration from environment
 	port := getEnv("PORT", "8080")
-	dynamoEndpoint := getEnv("DYNAMODB_ENDPOINT", "")
-	dynamoTable := getEnv("DYNAMODB_TABLE", "xray_data")
-	awsRegion := getEnv("AWS_REGION", "us-east-1")
+	clickhouseHost := getEnv("CLICKHOUSE_HOST", "localhost")
+	clickhousePort := getEnvInt("CLICKHOUSE_PORT", 9000)
+	clickhouseDB := getEnv("CLICKHOUSE_DB", "xray")
+	clickhouseUser := getEnv("CLICKHOUSE_USER", "default")
+	clickhousePassword := getEnv("CLICKHOUSE_PASSWORD", "")
 
 	ctx := context.Background()
 
@@ -44,15 +47,19 @@ func main() {
 	var dataStore store.Store
 	var err error
 
-	dataStore, err = dynamodb.New(ctx, dynamodb.Config{
-		TableName: dynamoTable,
-		Endpoint:  dynamoEndpoint,
-		Region:    awsRegion,
+	dataStore, err = clickhouse.New(ctx, clickhouse.Config{
+		Host:     clickhouseHost,
+		Port:     clickhousePort,
+		Database: clickhouseDB,
+		Username: clickhouseUser,
+		Password: clickhousePassword,
 	})
 	if err != nil {
-		log.Fatalf("Failed to initialize DynamoDB store: %v", err)
+		log.Fatalf("Failed to initialize ClickHouse store: %v", err)
 	}
 	defer dataStore.Close()
+
+	log.Printf("Connected to ClickHouse at %s:%d", clickhouseHost, clickhousePort)
 
 	// Initialize handlers
 	ingestHandler := handlers.NewIngestHandler(dataStore)
@@ -118,13 +125,11 @@ func main() {
 			r.Post("/batch", ingestHandler.BatchCreateDecisions)
 		})
 
-		// Item history
-		r.Get("/items/{itemId}/history", queryHandler.GetItemHistory)
-
 		// Query endpoint
 		r.Route("/query", func(r chi.Router) {
 			r.Post("/", queryHandler.Query)
 			r.Get("/events", queryHandler.QueryEvents)
+			r.Get("/decisions", queryHandler.QueryDecisions)
 		})
 	})
 
@@ -166,6 +171,15 @@ func main() {
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
 	}
 	return defaultValue
 }

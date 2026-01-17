@@ -23,7 +23,7 @@ Setup (one-time):
     # Configure and register
     xray.configure(endpoint="https://api.xray.dev")
     xray.register_pipeline(MyPipelines.VOICE_AGENT, MySteps, MyReasons)
-
+    
 Usage:
     with xray.trace(MyPipelines.VOICE_AGENT, metadata={"player": "123"}) as t:
         with t.event("action_control", step_type=MySteps.FILTER, capture="full") as e:

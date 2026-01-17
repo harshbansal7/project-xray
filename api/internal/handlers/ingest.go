@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -21,7 +22,18 @@ func parseTime(s string) (time.Time, error) {
 		return t, nil
 	}
 	// Fall back to standard RFC3339
-	return time.Parse(time.RFC3339, s)
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t, nil
+	}
+	// Try ISO format without timezone (Python datetime default: "2026-01-05T22:21:11.908846")
+	if t, err := time.Parse("2006-01-02T15:04:05.999999", s); err == nil {
+		return t.UTC(), nil
+	}
+	// Try ISO format without microseconds and without timezone
+	if t, err := time.Parse("2006-01-02T15:04:05", s); err == nil {
+		return t.UTC(), nil
+	}
+	return time.Time{}, fmt.Errorf("could not parse time: %s", s)
 }
 
 // IngestHandler handles data ingestion endpoints
@@ -110,11 +122,26 @@ func (h *IngestHandler) BatchCreateTraces(w http.ResponseWriter, r *http.Request
 			traceID = uuid.New().String()
 		}
 
+		// Use status from request, default to "running"
+		status := "running"
+		if t.Status != "" {
+			status = t.Status
+		}
+
+		// Parse ended_at if provided
+		var endedAt *time.Time
+		if t.EndedAt != nil {
+			if parsedEnd, err := parseTime(*t.EndedAt); err == nil {
+				endedAt = &parsedEnd
+			}
+		}
+
 		traces[i] = &models.Trace{
 			TraceID:    traceID,
 			PipelineID: t.PipelineID,
 			StartedAt:  startedAt,
-			Status:     "running",
+			EndedAt:    endedAt,
+			Status:     status,
 			Metadata:   t.Metadata,
 			InputData:  t.InputData,
 			Tags:       t.Tags,

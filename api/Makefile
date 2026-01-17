@@ -12,20 +12,18 @@ build:
 run:
 	go run $(MAIN_PATH)/main.go
 
-# Run with local DynamoDB
+# Run with local ClickHouse
 run-local:
-	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local DYNAMODB_ENDPOINT=http://localhost:8000 go run $(MAIN_PATH)/main.go
+	CLICKHOUSE_HOST=localhost CLICKHOUSE_PORT=9000 go run $(MAIN_PATH)/main.go
 
-dynamdb-admin:
-	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local DYNAMODB_ENDPOINT=http://localhost:8000 dynamodb-admin
+# Run tests
+test:
+	go test -v ./...
 
-# Generate Swagger docs
-swagger:
-	swag init -g cmd/server/main.go -o docs
-
-# Install swagger CLI
-install-swagger:
-	go install github.com/swaggo/swag/cmd/swag@latest
+# Test with coverage
+test-cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
 
 # Clean build artifacts
 clean:
@@ -37,59 +35,13 @@ deps:
 	go mod download
 	go mod tidy
 
-# Start local DynamoDB
-dynamodb-local:
-	docker run -d -p 8000:8000 --name xray-dynamodb amazon/dynamodb-local
-
-# Stop local DynamoDB
-dynamodb-stop:
-	docker stop xray-dynamodb && docker rm xray-dynamodb
-
-# Delete existing table
-delete-table:
-	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local aws dynamodb delete-table \
-		--endpoint-url http://localhost:8000 \
-		--region us-east-1 \
-		--table-name xray_data || true
-
-create-table:
-	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local aws dynamodb create-table \
-		--endpoint-url http://localhost:8000 \
-		--region us-east-1 \
-		--table-name xray_data \
-		--attribute-definitions \
-			AttributeName=PK,AttributeType=S \
-			AttributeName=SK,AttributeType=S \
-			AttributeName=GSI2PK,AttributeType=S \
-			AttributeName=GSI2SK,AttributeType=S \
-			AttributeName=GSI3PK,AttributeType=S \
-			AttributeName=GSI3SK,AttributeType=S \
-			AttributeName=GSI4PK,AttributeType=S \
-			AttributeName=GSI4SK,AttributeType=S \
-			AttributeName=GSI5PK,AttributeType=S \
-			AttributeName=GSI5SK,AttributeType=S \
-		--key-schema \
-			AttributeName=PK,KeyType=HASH \
-			AttributeName=SK,KeyType=RANGE \
-		--global-secondary-indexes \
-			'[{"IndexName":"pipeline-time-index","KeySchema":[{"AttributeName":"GSI2PK","KeyType":"HASH"},{"AttributeName":"GSI2SK","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}},{"IndexName":"step-type-analytics-index","KeySchema":[{"AttributeName":"GSI3PK","KeyType":"HASH"},{"AttributeName":"GSI3SK","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}},{"IndexName":"event-decisions-index","KeySchema":[{"AttributeName":"GSI4PK","KeyType":"HASH"},{"AttributeName":"GSI4SK","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}},{"IndexName":"item-history-index","KeySchema":[{"AttributeName":"GSI5PK","KeyType":"HASH"},{"AttributeName":"GSI5SK","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
-		--billing-mode PAY_PER_REQUEST
-	sleep 2
-	AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local aws dynamodb update-time-to-live \
-		--endpoint-url http://localhost:8000 \
-		--region us-east-1 \
-		--table-name xray_data \
-		--time-to-live-specification "Enabled=true,AttributeName=ttl"
-
-
 # Docker build
 docker-build:
 	docker build -t xray-api .
 
-# Docker run
+# Docker run with ClickHouse
 docker-run:
 	docker run -p 8080:8080 \
-		-e AWS_ACCESS_KEY_ID=local \
-		-e AWS_SECRET_ACCESS_KEY=local \
-		-e DYNAMODB_ENDPOINT=http://host.docker.internal:8000 \
+		-e CLICKHOUSE_HOST=host.docker.internal \
+		-e CLICKHOUSE_PORT=9000 \
 		xray-api
