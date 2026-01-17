@@ -34,7 +34,6 @@ class Event:
     def __init__(
         self,
         trace_id: str,
-        step_name: str,
         step_type: Union[XRayStepType, str, Enum],
         pipeline_id: Optional[Union[XRayPipelineID, str, Enum]] = None,
         capture: str = "metrics",
@@ -45,10 +44,9 @@ class Event:
     ):
         """
         Create a new Event.
-        
+
         Args:
             trace_id: The trace this event belongs to.
-            step_name: Human-readable name for this step.
             step_type: Step type (XRayStepType enum value recommended).
             pipeline_id: Pipeline ID for validation.
             capture: How much to capture: "metrics", "sample", or "full".
@@ -84,7 +82,6 @@ class Event:
         
         self._data = EventData(
             trace_id=trace_id,
-            step_name=step_name,
             step_type=step_type_str,
             capture_mode=capture_enum,
             parent_event_id=parent_event_id,
@@ -120,10 +117,6 @@ class Event:
         """Get the unique event ID."""
         return self._data.event_id
     
-    @property
-    def step_name(self) -> str:
-        """Get the step name."""
-        return self._data.step_name
     
     def set_input(self, data: Any, count: Optional[int] = None) -> None:
         """
@@ -305,4 +298,4 @@ class Event:
         return self._data.model_dump(mode="json")
     
     def __repr__(self) -> str:
-        return f"Event(step_name={self._data.step_name!r}, step_type={self._data.step_type!r})"
+        return f"Event(step_type={self._data.step_type!r})"

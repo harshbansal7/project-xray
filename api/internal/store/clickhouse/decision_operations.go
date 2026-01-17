@@ -94,7 +94,7 @@ func (s *ClickHouseStore) BatchCreateDecisions(ctx context.Context, decisions []
 }
 
 // QueryDecisions allows flexible querying of decisions
-// This requires joining with events for filters like pipeline_id or step_name
+// This requires joining with events for filters like pipeline_id or step_type
 func (s *ClickHouseStore) QueryDecisions(ctx context.Context, opts *store.DecisionQueryOpts) (*store.DecisionPage, error) {
 	var decisionModels []DecisionModel
 	query := s.db.WithContext(ctx).Table("xray_decisions").
@@ -104,8 +104,8 @@ func (s *ClickHouseStore) QueryDecisions(ctx context.Context, opts *store.Decisi
 	if opts.PipelineID != nil {
 		query = query.Where("xray_events.pipeline_id = ?", *opts.PipelineID)
 	}
-	if opts.StepName != nil {
-		query = query.Where("xray_events.step_name = ?", *opts.StepName)
+	if opts.StepType != nil {
+		query = query.Where("xray_events.step_type = ?", *opts.StepType)
 	}
 
 	if opts.TraceID != nil {

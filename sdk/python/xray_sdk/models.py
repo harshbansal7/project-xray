@@ -47,7 +47,6 @@ class EventData(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     trace_id: str
     parent_event_id: Optional[str] = None
-    step_name: str
     step_type: str  # Now a string - validated against registry in Event class
     capture_mode: CaptureMode = CaptureMode.METRICS
     

@@ -39,7 +39,6 @@ const (
 			event_id String,
 			trace_id String,
 			parent_event_id Nullable(String),
-			step_name LowCardinality(String),
 			step_type LowCardinality(String),
 			capture_mode LowCardinality(String) DEFAULT 'metrics',
 			input_count Nullable(Int32),
@@ -53,7 +52,7 @@ const (
 			ended_at Nullable(DateTime64(6)),
 			reduction_ratio Nullable(Float32),
 			created_at DateTime64(6) DEFAULT now64(6),
-			
+
 			INDEX idx_step_type step_type TYPE bloom_filter GRANULARITY 4
 		) ENGINE = MergeTree()
 		PARTITION BY toYYYYMM(started_at)

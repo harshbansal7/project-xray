@@ -31,19 +31,18 @@ type EventModel struct {
 	EventID        string     `gorm:"primaryKey;type:String"`
 	TraceID        string     `gorm:"type:String;index:idx_events_trace_id"`
 	ParentEventID  *string    `gorm:"type:Nullable(String)"`
-	StepName       string     `gorm:"type:LowCardinality(String)"`
 	StepType       string     `gorm:"type:LowCardinality(String)"`
 	CaptureMode    string     `gorm:"type:LowCardinality(String);default:'metrics'"`
-	InputCount     *int       `gorm:"type:Nullable(Int32)"`
+	InputCount     *int32     `gorm:"type:Nullable(Int32)"`
 	InputSample    JSONArray  `gorm:"type:String;default:'[]'"`
-	OutputCount    *int       `gorm:"type:Nullable(Int32)"`
+	OutputCount    *int32     `gorm:"type:Nullable(Int32)"`
 	OutputSample   JSONArray  `gorm:"type:String;default:'[]'"`
 	Metrics        JSONMap    `gorm:"type:String;default:'{}'"`
 	Annotations    JSONMap    `gorm:"type:String;default:'{}'"`
 	PipelineID     string     `gorm:"type:LowCardinality(String)"`
 	StartedAt      time.Time  `gorm:"type:DateTime64(6)"`
 	EndedAt        *time.Time `gorm:"type:Nullable(DateTime64(6))"`
-	ReductionRatio *float64   `gorm:"type:Nullable(Float32)"`
+	ReductionRatio *float32   `gorm:"type:Nullable(Float32)"`
 	CreatedAt      time.Time  `gorm:"type:DateTime64(6);default:now64(6)"`
 }
 
@@ -239,16 +238,27 @@ func (m *TraceModel) ToDomain() *models.Trace {
 }
 
 func (m *EventModel) ToDomain() *models.Event {
+	var inputCount *int
+	if m.InputCount != nil {
+		value := int(*m.InputCount)
+		inputCount = &value
+	}
+
+	var outputCount *int
+	if m.OutputCount != nil {
+		value := int(*m.OutputCount)
+		outputCount = &value
+	}
+
 	return &models.Event{
 		EventID:       m.EventID,
 		TraceID:       m.TraceID,
 		ParentEventID: m.ParentEventID,
-		StepName:      m.StepName,
 		StepType:      models.StepType(m.StepType),
 		CaptureMode:   models.CaptureMode(m.CaptureMode),
-		InputCount:    m.InputCount,
+		InputCount:    inputCount,
 		InputSample:   []interface{}(m.InputSample),
-		OutputCount:   m.OutputCount,
+		OutputCount:   outputCount,
 		OutputSample:  []interface{}(m.OutputSample),
 		Metrics:       map[string]interface{}(m.Metrics),
 		Annotations:   map[string]interface{}(m.Annotations),

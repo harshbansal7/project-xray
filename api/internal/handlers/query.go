@@ -165,7 +165,6 @@ func (h *QueryHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 		"event": map[string]interface{}{
 			"event_id":   event.EventID,
 			"trace_id":   event.TraceID,
-			"step_name":  event.StepName,
 			"step_type":  event.StepType,
 			"started_at": event.StartedAt,
 			"ended_at":   event.EndedAt,
@@ -348,7 +347,7 @@ func (h *QueryHandler) Query(w http.ResponseWriter, r *http.Request) {
 // @Tags query
 // @Produce json
 // @Param pipeline_id query string false "Filter by pipeline ID"
-// @Param step_name query string false "Filter by step name"
+// @Param step_type query string false "Filter by step type"
 // @Param limit query int false "Max results"
 // @Success 200 {object} models.PaginatedResponse
 // @Router /query/decisions [get]
@@ -361,8 +360,8 @@ func (h *QueryHandler) QueryDecisions(w http.ResponseWriter, r *http.Request) {
 		opts.PipelineID = &pipelineID
 	}
 
-	if stepName := r.URL.Query().Get("step_name"); stepName != "" {
-		opts.StepName = &stepName
+	if stepType := r.URL.Query().Get("step_type"); stepType != "" {
+		opts.StepType = &stepType
 	}
 
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {

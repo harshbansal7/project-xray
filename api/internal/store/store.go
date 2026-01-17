@@ -77,7 +77,7 @@ type EventQueryOpts struct {
 type DecisionQueryOpts struct {
 	TraceID    *string
 	PipelineID *string
-	StepName   *string
+	StepType   *string
 	Outcome    *string
 	ReasonCode *string
 	ItemID     *string

@@ -79,9 +79,10 @@ xray.register_pipeline(Pipelines.COMPETITOR_SELECTION, Steps, Reasons)
 
 # Sampling: Always capture rejections, and capture all acceptances for demo visibility
 sampling = SamplingConfig({
-    "rejected": 1.0,
+    "happy": 1.0,
+    "sad": 1.0,
+    "crazy": 1.0,
     "accepted": 1.0,
-    "*": 1.0,  # Capture all other outcomes (happy, sad, crazy, etc.)
 })
 
 
@@ -338,25 +339,25 @@ def run_competitor_selection():
     ) as trace:
         
         # Step 1: Generate keywords
-        with trace.event("generate_keywords", step_type=Steps.KEYWORD_GEN) as e:
+        with trace.event(step_type=Steps.KEYWORD_GEN) as e:
             keywords = generate_keywords(client, BASE_PRODUCT)
             e.set_output(keywords, count=len(keywords))
             e.annotate("keywords", keywords)
         
         # Step 2: Search catalog
-        with trace.event("search_catalog", step_type=Steps.CATALOG_SEARCH) as e:
+        with trace.event(step_type=Steps.CATALOG_SEARCH) as e:
             candidates = search_catalog(client, keywords, BASE_PRODUCT)
             e.set_output(candidates, count=len(candidates))
             e.annotate("candidates", candidates)
         
         # Step 3: Generate filters
-        with trace.event("generate_filters", step_type=Steps.FILTER) as e:
+        with trace.event(step_type=Steps.FILTER) as e:
             filters = generate_filters(client, BASE_PRODUCT)
             e.set_output(filters)
             e.annotate("filters", filters)
         
         # Step 4: Apply filters
-        with trace.event("apply_filters", step_type=Steps.FILTER, capture="full") as e:
+        with trace.event(step_type=Steps.FILTER, capture="full") as e:
             e.set_input(candidates, count=len(candidates))
             passed, decisions = apply_filters(candidates, filters, BASE_PRODUCT)
             
@@ -369,7 +370,7 @@ def run_competitor_selection():
             rejected = len(candidates) - len(passed)
         
         # Step 5: Rank candidates
-        with trace.event("rank_candidates", step_type=Steps.RANK, capture="full") as e:
+        with trace.event(step_type=Steps.RANK, capture="full") as e:
             e.set_input(passed, count=len(passed))
             ranked = rank_candidates(client, passed, BASE_PRODUCT)
             
@@ -393,7 +394,7 @@ def run_competitor_selection():
             e.set_output(ranked, count=len(ranked))
         
         # Step 6: Select best match
-        with trace.event("select_best", step_type=Steps.SELECT) as e:
+        with trace.event(step_type=Steps.SELECT) as e:
             e.set_input(ranked, count=len(ranked))
             
             if ranked:

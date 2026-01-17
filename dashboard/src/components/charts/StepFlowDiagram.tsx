@@ -6,7 +6,6 @@ interface StepFlowDiagramProps {
 }
 
 export interface StepData {
-  name: string;
   type: string;
   inputCount: number;
   outputCount: number;
@@ -41,7 +40,7 @@ export function StepFlowDiagram({ steps, className = '' }: StepFlowDiagramProps)
         const isBottleneck = step.durationMs > 1000; // > 1s is slow
 
         return (
-          <div key={step.name} className="flex items-center">
+          <div key={step.type} className="flex items-center">
             {/* Step block */}
             <div className="flex flex-col items-center group">
               {/* Input bar */}
@@ -59,9 +58,6 @@ export function StepFlowDiagram({ steps, className = '' }: StepFlowDiagramProps)
                 group-hover:border-[var(--border-secondary)]
               `}>
                 <span className="text-xs font-medium text-[var(--text-primary)] block truncate max-w-[120px]">
-                  {step.name}
-                </span>
-                <span className="text-[10px] text-[var(--text-tertiary)] block">
                   {step.type}
                 </span>
               </div>

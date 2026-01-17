@@ -4,6 +4,7 @@ package clickhouse
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/xray-sdk/xray-api/internal/models"
@@ -32,36 +33,51 @@ func (s *ClickHouseStore) CreateTrace(ctx context.Context, trace *models.Trace) 
 	return s.db.WithContext(ctx).Create(&model).Error
 }
 
-// UpdateTrace updates an existing trace
+// UpdateTrace updates an existing trace using ReplacingMergeTree semantics
 func (s *ClickHouseStore) UpdateTrace(ctx context.Context, traceID string, updates *store.TraceUpdates) error {
-	toUpdate := make(map[string]interface{})
+	// For ReplacingMergeTree, we need to insert a new complete row
+	// First get the current trace
+	var current TraceModel
+	err := s.db.WithContext(ctx).Where("trace_id = ?", traceID).First(&current).Error
+	if err != nil {
+		return fmt.Errorf("failed to find trace for update: %w", err)
+	}
+
+	// Apply updates
 	if updates.EndedAt != nil {
-		toUpdate["ended_at"] = *updates.EndedAt
+		current.EndedAt = updates.EndedAt
 	}
 	if updates.Status != nil {
-		toUpdate["status"] = *updates.Status
+		current.Status = *updates.Status
 	}
 
-	if len(toUpdate) == 0 {
-		return nil
+	// Insert the updated row (ReplacingMergeTree will handle deduplication)
+	err = s.db.WithContext(ctx).Create(&current).Error
+	if err != nil {
+		return err
 	}
 
-	return s.db.WithContext(ctx).Model(&TraceModel{}).
-		Where("trace_id = ?", traceID).
-		Updates(toUpdate).Error
+	// Force OPTIMIZE to ensure immediate deduplication for development
+	// In production, ClickHouse handles this automatically during merges
+	s.db.Exec("OPTIMIZE TABLE xray_traces FINAL")
+
+	return nil
 }
 
 // GetTrace retrieves a single trace by ID
 func (s *ClickHouseStore) GetTrace(ctx context.Context, traceID string) (*models.Trace, error) {
 	var model TraceModel
 	err := s.db.WithContext(ctx).
-		// Use FINAL to get the latest state after updates/replacements
-		Set("gorm:table_options", "FINAL").
+		Table("xray_traces FINAL").
 		Where("trace_id = ?", traceID).
-		First(&model).Error
+		Limit(1).
+		Find(&model).Error
 
 	if err != nil {
 		return nil, err
+	}
+	if model.TraceID == "" {
+		return nil, nil // Or return specific error if prefered
 	}
 
 	return model.ToDomain(), nil

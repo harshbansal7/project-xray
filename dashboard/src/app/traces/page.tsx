@@ -61,7 +61,7 @@ export default function TracesPage() {
             placeholder="Search traces..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-sm"
+            className="w-full h-9 pl-10 pr-3 text-sm bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]"
           />
         </div>
         <select

@@ -13,7 +13,7 @@ import (
 // QueryTraces queries traces with various filters
 func (s *ClickHouseStore) QueryTraces(ctx context.Context, opts *store.TraceQueryOpts) (*store.TracePage, error) {
 	var traceModels []TraceModel
-	query := s.db.WithContext(ctx).Table("xray_traces")
+	query := s.db.WithContext(ctx).Table("xray_traces FINAL")
 
 	// Filter by PipelineID (uses Projection if available)
 	if opts.PipelineID != nil {

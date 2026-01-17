@@ -26,10 +26,18 @@ stop:
 # Delete all data from ClickHouse tables
 clear-db:
 	@echo "Clearing all data from ClickHouse..."
-	@curl -s "http://localhost:8123/" -d "TRUNCATE TABLE IF EXISTS xray.xray_traces" || true
-	@curl -s "http://localhost:8123/" -d "TRUNCATE TABLE IF EXISTS xray.xray_events" || true
-	@curl -s "http://localhost:8123/" -d "TRUNCATE TABLE IF EXISTS xray.xray_decisions" || true
+	@curl -s "http://localhost:8123/" -u "default:password" -d "TRUNCATE TABLE IF EXISTS xray.xray_traces" || true
+	@curl -s "http://localhost:8123/" -u "default:password" -d "TRUNCATE TABLE IF EXISTS xray.xray_events" || true
+	@curl -s "http://localhost:8123/" -u "default:password" -d "TRUNCATE TABLE IF EXISTS xray.xray_decisions" || true
 	@echo "All tables cleared!"
+
+# Drop and recreate ClickHouse tables
+drop-db:
+	@echo "Dropping ClickHouse tables..."
+	@curl -s "http://localhost:8123/" -u "default:password" -d "DROP TABLE IF EXISTS xray.xray_traces" || true
+	@curl -s "http://localhost:8123/" -u "default:password" -d "DROP TABLE IF EXISTS xray.xray_events" || true
+	@curl -s "http://localhost:8123/" -u "default:password" -d "DROP TABLE IF EXISTS xray.xray_decisions" || true
+	@echo "Tables dropped! Run 'make run' to recreate them."
 
 # View API logs
 logs:

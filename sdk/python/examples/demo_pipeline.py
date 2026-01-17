@@ -159,15 +159,15 @@ def run_pipeline():
         sampling_config=sampling_config,
     ) as trace:
 
-        with trace.event("load_dataset", step_type=DigitSteps.API) as e:
+        with trace.event(step_type=DigitSteps.API) as e:
             data = load_digits()
             e.set_output(data.images, count=len(data.images))
 
-        with trace.event("transform", step_type=DigitSteps.TRANSFORM) as e:
+        with trace.event(step_type=DigitSteps.TRANSFORM) as e:
             images = transform_images(data.images)
             e.set_output(images)
 
-        with trace.event("filter_contrast", step_type=DigitSteps.FILTER, capture="full") as e:
+        with trace.event(step_type=DigitSteps.FILTER, capture="full") as e:
             images, labels, decisions = filter_low_contrast(
                 images, data.target, min_contrast=0.36
             )
@@ -175,24 +175,24 @@ def run_pipeline():
                 e.record_decision(**d)
             e.set_output(images)
 
-        with trace.event("filter_digits", step_type=DigitSteps.FILTER, capture="full") as e:
+        with trace.event(step_type=DigitSteps.FILTER, capture="full") as e:
             images, labels, decisions = filter_digits(images, labels, exclude=[0, 1])
             for d in decisions:
                 e.record_decision(**d)
             e.set_output(images)
 
-        with trace.event("split", step_type=DigitSteps.TRANSFORM):
+        with trace.event(step_type=DigitSteps.TRANSFORM):
             X_train, X_test, y_train, y_test = train_test_split(
                 images, labels, test_size=0.2, random_state=42
             )
 
-        with trace.event("classify", step_type=DigitSteps.LLM, capture="sample") as e:
+        with trace.event(step_type=DigitSteps.LLM, capture="sample") as e:
             preds, acc, decisions = classify(X_train, y_train, X_test, y_test)
             for d in decisions:
                 e.record_decision(**d)
             e.annotate("accuracy", acc)
 
-        with trace.event("select_confident", step_type=DigitSteps.SELECT) as e:
+        with trace.event(step_type=DigitSteps.SELECT) as e:
             confident = sum(d["scores"]["confidence"] > 0.8 for d in decisions)
             e.set_output(confident)
 

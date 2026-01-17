@@ -12,6 +12,7 @@ services:
     environment:
       - CLICKHOUSE_DB=xray
       - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
     ulimits:
       nofile:
@@ -36,7 +37,7 @@ services:
       - CLICKHOUSE_PORT=9000
       - CLICKHOUSE_DB=xray
       - CLICKHOUSE_USER=default
-      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_PASSWORD=password
     depends_on:
       clickhouse:
         condition: service_healthy

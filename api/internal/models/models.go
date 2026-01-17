@@ -39,7 +39,6 @@ type Event struct {
 	EventID       string                 `json:"event_id"`
 	TraceID       string                 `json:"trace_id"`
 	ParentEventID *string                `json:"parent_event_id,omitempty"`
-	StepName      string                 `json:"step_name"`
 	StepType      StepType               `json:"step_type"`
 	CaptureMode   CaptureMode            `json:"capture_mode"`
 	InputCount    *int                   `json:"input_count,omitempty"`

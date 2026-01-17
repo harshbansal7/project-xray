@@ -18,7 +18,6 @@ export interface Event {
   event_id: string;
   trace_id: string;
   parent_event_id?: string;
-  step_name: string;
   step_type: string;
   capture_mode: string;
   input_count?: number;
@@ -155,13 +154,13 @@ export async function queryEvents(params: {
 
 export async function queryDecisions(params: {
   pipeline_id?: string;
-  step_name?: string;
+  step_type?: string;
   outcome?: string;
   limit?: number;
 }): Promise<DecisionPage> {
   const searchParams = new URLSearchParams();
   if (params.pipeline_id) searchParams.set('pipeline_id', params.pipeline_id);
-  if (params.step_name) searchParams.set('step_name', params.step_name);
+  if (params.step_type) searchParams.set('step_type', params.step_type);
   if (params.outcome) searchParams.set('outcome', params.outcome);
   if (params.limit) searchParams.set('limit', params.limit.toString());
   

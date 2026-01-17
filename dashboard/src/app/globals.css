@@ -141,12 +141,11 @@ tr:hover td {
   color: var(--text-primary);
 }
 
-/* Input styles */
+/* Input styles - base only, padding set per component */
 input, select {
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   color: var(--text-primary);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -160,6 +159,11 @@ input:focus, select:focus {
 
 input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Default padding for selects (inputs use Tailwind classes for custom padding) */
+select {
+  padding: 0.5rem 0.75rem;
 }
 
 /* Card styles */

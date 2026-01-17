@@ -5,7 +5,9 @@ import {
   ChevronDown,
   ChevronUp,
   Box,
-  Circle
+  Hash,
+  Clock,
+  Tag
 } from 'lucide-react';
 import { Decision } from '@/utils/api';
 import { getOutcomeColor } from '@/utils/colors';
@@ -58,47 +60,46 @@ export default function DecisionStream({ decisions, className = '' }: DecisionSt
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Header & Controls */}
-      <div className="flex flex-col gap-4 mb-4">
+      <div className="flex flex-col gap-3 mb-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Filter className="w-5 h-5" />
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+            <Filter className="w-4 h-4 text-[var(--accent)]" />
             Decision Stream
           </h3>
-          <span className="text-sm text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-2 py-1 rounded-full border border-[var(--border-primary)]">
-            {stats.total} Decisions
+          <span className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-2.5 py-1 rounded-md font-mono">
+            {stats.total} total
           </span>
         </div>
 
-        {/* Filter Bar - Dynamic */}
-        <div className="flex flex-wrap gap-2 p-1 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-primary)] w-fit">
+        {/* Filter Chips */}
+        <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all border ${
               activeFilter === 'all'
-                ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)] bg-[var(--bg-primary)]'
             }`}
           >
-            All <span className="ml-1 opacity-60 text-xs">{stats.total}</span>
+            All
           </button>
           
           {uniqueOutcomes.map((outcome) => {
             const color = getOutcomeColor(outcome);
+            const isActive = activeFilter === outcome;
             return (
               <button
                 key={outcome}
                 onClick={() => setActiveFilter(outcome)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
-                  activeFilter === outcome
-                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-                }`}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all border flex items-center gap-1.5`}
+                style={{
+                  backgroundColor: isActive ? color : 'var(--bg-primary)',
+                  borderColor: isActive ? color : `${color}40`,
+                  color: isActive ? 'white' : color,
+                }}
               >
                 <span className="capitalize">{outcome}</span>
-                <span 
-                  className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${color}20`, color: color }}
-                >
+                <span className={`text-[10px] ${isActive ? 'opacity-80' : 'opacity-60'}`}>
                   {stats[outcome]}
                 </span>
               </button>
@@ -114,17 +115,17 @@ export default function DecisionStream({ decisions, className = '' }: DecisionSt
             placeholder="Search by Item ID, Outcome, or Reason..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="w-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]"
           />
         </div>
       </div>
 
       {/* Stream List */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2 min-h-[400px]">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[400px]">
         {filteredDecisions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-[var(--text-tertiary)] border border-dashed border-[var(--border-primary)] rounded-xl">
-            <Search className="w-8 h-8 mb-2 opacity-50" />
-            <p>No decisions match your filter</p>
+          <div className="flex flex-col items-center justify-center p-8 text-[var(--text-tertiary)] border border-dashed border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50">
+            <Search className="w-6 h-6 mb-2 opacity-40" />
+            <p className="text-sm">No decisions match your filter</p>
           </div>
         ) : (
           filteredDecisions.map((decision) => (
@@ -143,110 +144,118 @@ export default function DecisionStream({ decisions, className = '' }: DecisionSt
 
 function DecisionCard({ decision, expanded, onToggle }: { decision: Decision; expanded: boolean; onToggle: () => void }) {
   const colorHex = getOutcomeColor(decision.outcome);
-  
-  // Dynamic generic styles
-  const dynamicStyle = {
-    color: colorHex,
-  };
-  
-  const statusClass = `mt-0.5 p-1.5 rounded-full flex-shrink-0 bg-opacity-10`;
-
-  const pillStyle = {
-    color: colorHex,
-    backgroundColor: `${colorHex}15`,
-    borderColor: `${colorHex}30`
-  };
 
   return (
     <div 
-      className={`group border rounded-lg transition-all duration-200 overflow-hidden ${
+      className={`rounded-lg transition-all duration-200 overflow-hidden cursor-pointer ${
         expanded 
-          ? 'bg-[var(--bg-secondary)] shadow-lg scale-[1.01]' 
-          : 'border-[var(--border-primary)] hover:border-[var(--border-secondary)] bg-[var(--bg-primary)]'
+          ? 'bg-[var(--bg-secondary)]' 
+          : 'bg-[var(--bg-primary)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
       }`}
-      style={expanded ? { borderColor: colorHex } : {}}
+      style={expanded ? { 
+        boxShadow: `0 0 0 2px ${colorHex}40`,
+      } : {}}
+      onClick={onToggle}
     >
-      {/* Card Header (Always Visible) */}
-      <div 
-        className="p-3 flex items-start gap-3 cursor-pointer"
-        onClick={onToggle}
-      >
-        {/* Status Icon - Generic */}
-        <div className={statusClass} style={{ backgroundColor: `${colorHex}15` }}>
-            <Circle className="w-4 h-4" style={{ color: colorHex, fill: `${colorHex}40` }} />
-        </div>
+      {/* Card Header */}
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-3">
+          {/* Left: Main content */}
+          <div className="flex-1 min-w-0">
+            {/* Item ID with hash icon */}
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Hash className="w-3 h-3 text-[var(--text-tertiary)] flex-shrink-0" />
+              <span className="font-mono text-sm font-medium text-[var(--text-primary)] truncate" title={decision.item_id}>
+                {decision.item_id}
+              </span>
+            </div>
 
-        {/* content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-mono text-[13px] font-semibold text-[var(--text-primary)] truncate" title={decision.item_id}>
-              {decision.item_id}
-            </span>
-            <span className="text-xs font-mono text-[var(--text-tertiary)] ml-2 flex-shrink-0">
-              {decision.timestamp ? new Date(decision.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 }) : ''}
-            </span>
+            {/* Outcome badge and reason code */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span 
+                className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                style={{
+                  backgroundColor: `${colorHex}15`,
+                  color: colorHex,
+                }}
+              >
+                {decision.outcome}
+              </span>
+              {decision.reason_code && (
+                <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                  <Tag className="w-3 h-3" />
+                  <span className="font-mono">{decision.reason_code}</span>
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
-            <span 
-              className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border"
-              style={pillStyle}
-            >
-              {decision.outcome}
-            </span>
-            {decision.reason_code && (
-              <span className="text-[var(--text-secondary)] flex items-center gap-1 overflow-hidden">
-                • <span className="font-mono text-xs opacity-80 truncate">{decision.reason_code}</span>
+          {/* Right: Timestamp and expand icon */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {decision.timestamp && (
+              <span className="text-[10px] font-mono text-[var(--text-tertiary)] hidden sm:block">
+                {new Date(decision.timestamp).toLocaleTimeString([], { 
+                  hour12: false, 
+                  hour: '2-digit', 
+                  minute: '2-digit', 
+                  second: '2-digit' 
+                })}
               </span>
             )}
+            <div className="text-[var(--text-tertiary)]">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-1 text-[var(--text-tertiary)]">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </div>
 
       {/* Expanded Details */}
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-[var(--border-primary)] bg-[var(--bg-tertiary)]/30">
+        <div 
+          className="px-3 pb-3 pt-0 border-t"
+          style={{ borderColor: `${colorHex}20` }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {decision.reason_detail && (
-            <div className="mb-4 mt-3">
-              <p className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold mb-1">Reason Detail</p>
-              <p className="text-sm text-[var(--text-secondary)] bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-primary)]">
+            <div className="mt-3">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold mb-1.5">Reason Detail</p>
+              <p className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] p-2.5 rounded-md leading-relaxed">
                 {decision.reason_detail}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            {decision.scores && Object.keys(decision.scores).length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold mb-2">Scores & Metrics</p>
-                <div className="space-y-1">
-                  {Object.entries(decision.scores).map(([key, val]) => (
-                    <div key={key} className="flex justify-between text-xs border-b border-[var(--border-primary)]/50 last:border-0 py-1">
-                      <span className="text-[var(--text-secondary)]">{key}</span>
-                      <span className="font-mono text-[var(--accent)]">{typeof val === 'number' ? val.toFixed(2) : val}</span>
-                    </div>
-                  ))}
-                </div>
+          {decision.scores && Object.keys(decision.scores).length > 0 && (
+            <div className="mt-3">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold mb-1.5">Scores</p>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(decision.scores).map(([key, val]) => (
+                  <div 
+                    key={key} 
+                    className="flex justify-between text-xs bg-[var(--bg-tertiary)] p-2 rounded-md"
+                  >
+                    <span className="text-[var(--text-secondary)]">{key}</span>
+                    <span className="font-mono text-[var(--accent)] font-medium">
+                      {typeof val === 'number' ? val.toFixed(2) : val}
+                    </span>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {decision.item_snapshot && (
-              <div className="col-span-2">
-                <p className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold mb-2 flex items-center gap-1">
-                  <Box className="w-3 h-3" /> Item Snapshot
-                </p>
-                <div className="bg-[var(--bg-primary)] rounded border border-[var(--border-primary)] overflow-hidden">
-                  <pre className="p-2 text-[10px] leading-relaxed overflow-x-auto text-[var(--text-secondary)] font-mono">
-                    {JSON.stringify(decision.item_snapshot, null, 2)}
-                  </pre>
-                </div>
+          {decision.item_snapshot && (
+            <div className="mt-3">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold mb-1.5 flex items-center gap-1">
+                <Box className="w-3 h-3" /> Item Snapshot
+              </p>
+              <div className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden">
+                <pre className="p-2.5 text-[10px] leading-relaxed overflow-x-auto text-[var(--text-secondary)] font-mono max-h-40">
+                  {JSON.stringify(decision.item_snapshot, null, 2)}
+                </pre>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

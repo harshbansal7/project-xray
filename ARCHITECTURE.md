@@ -79,7 +79,6 @@ I chose DynamoDB's single-table pattern because X-Ray's access patterns are pred
 POST /api/v1/events
 {
   "trace_id": "019abc...",
-  "step_name": "filter_products",
   "step_type": "filter",
   "capture_mode": "full",
   "input_count": 5000,
@@ -108,7 +107,7 @@ Response:
   "results": [
     {
       "event_id": "...",
-      "step_name": "price_filter",
+      "step_type": "filter",
       "metrics": { "input_count": 5000, "output_count": 30, "reduction_ratio": 0.994 }
     }
   ],
@@ -135,7 +134,6 @@ Response:
 
    ```json
    {
-     "step_name": "generate_keywords",
      "step_type": "llm",
      "annotations": {
        "prompt": "Generate search keywords for: iPhone 14 Case",
@@ -166,7 +164,7 @@ Response:
 4. **Check final ranking:**
    ```json
    {
-     "step_name": "llm_rank",
+     "step_type": "llm",
      "annotations": {
        "selected_item": "LAPTOP_STAND_123",
        "llm_reasoning": "Best match for 'device holder' keyword"
@@ -331,15 +329,14 @@ GET /traces/{trace_id}
     "metadata": { "player_id": "player_123", "session": "abc" }
   },
   "events": [
-    { "step_name": "stt", "step_type": "transform", "output_count": 1 },
-    { "step_name": "llm_decision", "step_type": "llm", "output_count": 1 },
+    { "step_type": "transform", "output_count": 1 },
+    { "step_type": "llm", "output_count": 1 },
     {
-      "step_name": "action_handler",
       "step_type": "filter",
       "input_count": 5,
       "output_count": 5
     },
-    { "step_name": "tts", "step_type": "transform", "output_count": 1 }
+    { "step_type": "transform", "output_count": 1 }
   ]
 }
 ```
@@ -357,7 +354,6 @@ GET /traces/{trace_id}/events/{llm_event_id}
 ```json
 {
   "event_id": "evt_llm_001",
-  "step_name": "llm_decision",
   "step_type": "llm",
   "input_sample": [
     "User: Can I have some money?\nSystem: You are a helpful assistant. Available actions: GIVE_MONEY=false (cooldown active), SPAWN_CAR=true, ..."

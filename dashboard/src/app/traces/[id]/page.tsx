@@ -21,7 +21,7 @@ import {
   Decision,
   formatDuration 
 } from '@/utils/api';
-import { getOutcomeColor, getOutcomeSentiment } from '@/utils/colors';
+import { getOutcomeColor } from '@/utils/colors';
 import { format } from 'date-fns';
 import DecisionStream from '@/components/trace/DecisionStream';
 
@@ -167,8 +167,7 @@ export default function TraceDetailPage() {
                     ) : (
                       <ChevronRight className="w-4 h-4 text-[var(--text-tertiary)]" />
                     )}
-                    <span className="text-sm text-[var(--text-primary)]">{event.step_name}</span>
-                    <span className="text-xs text-[var(--text-tertiary)]">{event.step_type}</span>
+                    <span className="text-sm text-[var(--text-primary)]">{event.step_type}</span>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
                     {event.input_count !== undefined && event.output_count !== undefined && (

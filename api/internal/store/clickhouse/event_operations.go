@@ -24,22 +24,33 @@ func (s *ClickHouseStore) CreateEvent(ctx context.Context, event *models.Event) 
 	}
 
 	// Compute reduction ratio
-	var reductionRatio *float64
+	var reductionRatio *float32
 	if event.InputCount != nil && event.OutputCount != nil && *event.InputCount > 0 {
-		ratio := 1.0 - (float64(*event.OutputCount) / float64(*event.InputCount))
+		ratio := float32(1.0 - (float64(*event.OutputCount) / float64(*event.InputCount)))
 		reductionRatio = &ratio
+	}
+
+	var inputCount *int32
+	if event.InputCount != nil {
+		val := int32(*event.InputCount)
+		inputCount = &val
+	}
+
+	var outputCount *int32
+	if event.OutputCount != nil {
+		val := int32(*event.OutputCount)
+		outputCount = &val
 	}
 
 	model := EventModel{
 		EventID:        event.EventID,
 		TraceID:        event.TraceID,
 		ParentEventID:  event.ParentEventID,
-		StepName:       event.StepName,
 		StepType:       string(event.StepType),
 		CaptureMode:    string(event.CaptureMode),
-		InputCount:     event.InputCount,
+		InputCount:     inputCount,
 		InputSample:    JSONArray(event.InputSample),
-		OutputCount:    event.OutputCount,
+		OutputCount:    outputCount,
 		OutputSample:   JSONArray(event.OutputSample),
 		Metrics:        JSONMap(event.Metrics),
 		Annotations:    JSONMap(event.Annotations),
@@ -125,22 +136,33 @@ func (s *ClickHouseStore) BatchCreateEvents(ctx context.Context, events []*model
 		pipelineID := traceMap[event.TraceID]
 
 		// Compute reduction ratio
-		var reductionRatio *float64
+		var reductionRatio *float32
 		if event.InputCount != nil && event.OutputCount != nil && *event.InputCount > 0 {
-			ratio := 1.0 - (float64(*event.OutputCount) / float64(*event.InputCount))
+			ratio := float32(1.0 - (float64(*event.OutputCount) / float64(*event.InputCount)))
 			reductionRatio = &ratio
+		}
+
+		var inputCount *int32
+		if event.InputCount != nil {
+			val := int32(*event.InputCount)
+			inputCount = &val
+		}
+
+		var outputCount *int32
+		if event.OutputCount != nil {
+			val := int32(*event.OutputCount)
+			outputCount = &val
 		}
 
 		eventModels[i] = EventModel{
 			EventID:        event.EventID,
 			TraceID:        event.TraceID,
 			ParentEventID:  event.ParentEventID,
-			StepName:       event.StepName,
 			StepType:       string(event.StepType),
 			CaptureMode:    string(event.CaptureMode),
-			InputCount:     event.InputCount,
+			InputCount:     inputCount,
 			InputSample:    JSONArray(event.InputSample),
-			OutputCount:    event.OutputCount,
+			OutputCount:    outputCount,
 			OutputSample:   JSONArray(event.OutputSample),
 			Metrics:        JSONMap(event.Metrics),
 			Annotations:    JSONMap(event.Annotations),

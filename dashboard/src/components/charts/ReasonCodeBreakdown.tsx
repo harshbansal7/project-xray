@@ -40,7 +40,7 @@ export function ReasonCodeBreakdown({
         <button
           key={code}
           onClick={() => onReasonCodeClick?.(code)}
-          className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors text-left group"
+          className="w-full flex items-center gap-3 p-1 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors text-left group"
         >
           {/* Reason code name */}
           <span className="w-36 text-xs font-mono text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)]">

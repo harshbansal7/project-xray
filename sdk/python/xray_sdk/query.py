@@ -26,7 +26,7 @@ def get_trace(trace_id: str) -> Optional[TraceWithEvents]:
         >>> print(trace.trace.pipeline_id)
         'competitor-selection'
         >>> for event in trace.events:
-        ...     print(f"{event.step_name}: {event.metrics.input_count} → {event.metrics.output_count}")
+        ...     print(f"{event.step_type}: {event.metrics.input_count} → {event.metrics.output_count}")
     """
     config = get_config()
     
@@ -85,7 +85,7 @@ def query(
         ...     time_range="last_7d"
         ... )
         >>> for event in results["results"]:
-        ...     print(f"{event['step_name']}: {event['metrics']['reduction_ratio']:.1%}")
+        ...     print(f"{event['step_type']}: {event['metrics']['reduction_ratio']:.1%}")
         
         >>> # Find traces for a specific pipeline
         >>> results = xray.query(

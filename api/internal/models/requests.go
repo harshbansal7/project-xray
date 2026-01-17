@@ -30,7 +30,6 @@ type CreateEventRequest struct {
 	EventID       string                 `json:"event_id"`
 	TraceID       string                 `json:"trace_id"`
 	ParentEventID *string                `json:"parent_event_id,omitempty"`
-	StepName      string                 `json:"step_name" validate:"required"`
 	StepType      string                 `json:"step_type" validate:"required"`
 	CaptureMode   string                 `json:"capture_mode,omitempty"`
 	InputCount    *int                   `json:"input_count,omitempty"`
@@ -71,7 +70,6 @@ type BatchDecisionsRequest struct {
 type QueryRequest struct {
 	PipelineID        *string           `json:"pipeline_id,omitempty"`
 	StepType          *string           `json:"step_type,omitempty"`
-	StepName          *string           `json:"step_name,omitempty"`
 	MinReductionRatio *float64          `json:"min_reduction_ratio,omitempty"`
 	TimeRange         *string           `json:"time_range,omitempty"` // last_24h, last_7d, etc.
 	StartTime         *string           `json:"start_time,omitempty"`

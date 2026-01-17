@@ -4,7 +4,7 @@ Trace context manager for capturing complete pipeline executions.
 
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union, Type
 from enum import Enum
 
 from xray_sdk.models import TraceData
@@ -92,22 +92,20 @@ class Trace:
     @contextmanager
     def event(
         self,
-        step_name: str,
-        step_type: Union[XRayStepType, str, Enum],
+        step_type: Type[XRayStepType],
         capture: str = "metrics",
         sampling_config: Optional[SamplingConfig] = None,
         **annotations,
     ) -> Generator[Event, None, None]:
         """
         Create a new event within this trace.
-        
+
         Args:
-            step_name: Human-readable name for this step.
             step_type: XRayStepType enum value (recommended) or string.
             capture: How much detail to capture: "metrics", "sample", or "full".
             sampling_config: Override trace-level sampling config for this event.
             **annotations: Additional annotations to attach.
-        
+
         Yields:
             Event context manager.
         """
@@ -116,7 +114,6 @@ class Trace:
 
         evt = Event(
             trace_id=self._data.trace_id,
-            step_name=step_name,
             step_type=step_type,
             pipeline_id=self._pipeline_id_original,
             capture=capture,
@@ -171,12 +168,12 @@ def trace(
     
     Example:
         >>> from xray_sdk import SamplingConfig
-        >>> 
+        >>>
         >>> # Custom sampling: always index rejections, sample 10% of acceptances
         >>> sampling = SamplingConfig({"rejected": 1.0, "accepted": 0.1})
         >>>
         >>> with xray.trace(MyPipelines.VOICE_AGENT, sampling_config=sampling) as t:
-        ...     with t.event("action_control", step_type=MySteps.FILTER) as e:
+        ...     with t.event(step_type=MySteps.FILTER) as e:
         ...         e.set_input(available_actions)
         ...         for action in available_actions:
         ...             allowed, reason = check_action(action)

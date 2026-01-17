@@ -167,7 +167,7 @@ def reset_config() -> None:
 
 
 def register_pipeline(
-    pipeline_id: Union[XRayPipelineID, str, Enum],
+    pipeline_id: Type[XRayPipelineID],
     step_types: Type[XRayStepType],
     reason_codes: Optional[Type[XRayReasonCode]] = None,
 ) -> None:
