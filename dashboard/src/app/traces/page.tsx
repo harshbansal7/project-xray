@@ -46,15 +46,15 @@ export default function TracesPage() {
   });
 
   return (
-    <div className="p-6 max-w-6xl animate-fade-in">
+    <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 2xl:px-10 py-4 sm:py-6 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text-primary)]">Traces</h1>
         <p className="text-sm text-[var(--text-tertiary)] mt-1">Pipeline execution history</p>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
+      <div className="flex flex-wrap gap-3 mb-4">
+        <div className="relative flex-1 min-w-[220px] sm:min-w-[280px] lg:min-w-[360px] 2xl:min-w-[460px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
@@ -67,7 +67,7 @@ export default function TracesPage() {
         <select
           value={selectedPipeline}
           onChange={e => setSelectedPipeline(e.target.value)}
-          className="h-9 text-sm min-w-[140px]"
+          className="h-9 text-sm min-w-[160px] max-w-[320px]"
         >
           <option value="">All Pipelines</option>
           {pipelines.map(p => <option key={p} value={p}>{p}</option>)}
@@ -75,7 +75,7 @@ export default function TracesPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="h-9 text-sm min-w-[120px]"
+          className="h-9 text-sm min-w-[140px]"
         >
           <option value="">All Status</option>
           <option value="running">Running</option>
@@ -98,8 +98,8 @@ export default function TracesPage() {
           <p className="text-[var(--text-secondary)]">No traces found</p>
         </div>
       ) : (
-        <div className="card">
-          <table className="w-full">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr>
                 <th>Status</th>

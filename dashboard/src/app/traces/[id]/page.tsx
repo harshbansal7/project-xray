@@ -24,6 +24,7 @@ import {
 import { getOutcomeColor } from '@/utils/colors';
 import { format } from 'date-fns';
 import DecisionStream from '@/components/trace/DecisionStream';
+import EventDataView from '@/components/trace/EventDataView';
 
 interface EventWithDecisions extends Event {
   decisions?: Decision[];
@@ -114,7 +115,7 @@ export default function TraceDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl animate-fade-in">
+    <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 2xl:px-10 py-4 sm:py-6 animate-fade-in">
       {/* Header */}
       <Link href="/traces" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-3">
         <ArrowLeft className="w-4 h-4" /> Traces
@@ -187,9 +188,18 @@ export default function TraceDetailPage() {
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 pt-2 border-t border-[var(--border-primary)]">
+                  <div className="px-4 pb-4 pt-2 border-t border-[var(--border-primary)] space-y-4">
+                    {/* Input/Output Data */}
+                    <EventDataView
+                      inputSample={event.input_sample}
+                      outputSample={event.output_sample}
+                      inputCount={event.input_count}
+                      outputCount={event.output_count}
+                    />
+
+                    {/* Annotations */}
                     {event.annotations && Object.keys(event.annotations).length > 0 && (
-                      <div className="mb-3">
+                      <div>
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Annotations</p>
                         <pre className="text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] p-2 rounded overflow-x-auto">
                           {JSON.stringify(event.annotations, null, 2)}
@@ -197,6 +207,7 @@ export default function TraceDetailPage() {
                       </div>
                     )}
 
+                    {/* Decisions */}
                     {event.loadingDecisions ? (
                       <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
                         <Loader2 className="w-3 h-3 animate-spin" /> Loading decisions...

@@ -3,6 +3,8 @@
 # Variables
 BINARY_NAME=xray-api
 MAIN_PATH=./cmd/server
+SWAGGER_MAIN=cmd/server/main.go
+SWAGGER_OUTPUT=docs
 
 # Build the binary
 build:
@@ -34,6 +36,10 @@ clean:
 deps:
 	go mod download
 	go mod tidy
+
+# Generate Swagger/OpenAPI docs
+swagger:
+	swag init -g $(SWAGGER_MAIN) -o $(SWAGGER_OUTPUT) --parseInternal --parseDependency --parseDepth 1
 
 # Docker build
 docker-build:

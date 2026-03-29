@@ -280,7 +280,7 @@ export default function PipelineDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl animate-fade-in">
+    <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 2xl:px-10 py-4 sm:py-6 animate-fade-in">
       {/* Header */}
       <div className="mb-6">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-3 transition-colors">
@@ -361,7 +361,7 @@ export default function PipelineDetailPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Outcome Distribution */}
             {Object.keys(decisionStats.outcomes).length > 0 && (
               <div className="card p-4">
@@ -540,7 +540,7 @@ export default function PipelineDetailPage() {
       )}
 
       {activeTab === 'steps' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="lg:col-span-2 card overflow-hidden shadow-sm">
             <table className="w-full">
               <thead>

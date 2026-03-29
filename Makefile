@@ -1,4 +1,4 @@
-.PHONY: run stop clear-db logs dashboard-dev
+.PHONY: run stop clear-db logs dashboard-dev install-sdk install-go-sdk test-go-sdk demo-go-sdk
 
 # Run all services (ClickHouse + API)
 run:
@@ -14,8 +14,7 @@ run-all: run dashboard-dev
 
 # Start dashboard development server
 dashboard-dev:
-	cd dashboard && npm run dev &
-	@echo "Dashboard: http://localhost:3000"
+	cd dashboard && npm run dev -- --port 3001
 
 # Stop all services
 stop:
@@ -55,6 +54,18 @@ demo:
 install-sdk:
 	cd sdk/python && pip install -e .
 
+# Prepare Go SDK dependencies
+install-go-sdk:
+	cd sdk/go && go mod tidy
+
+# Run Go SDK tests
+test-go-sdk:
+	cd sdk/go && go test ./...
+
+# Run Go SDK basic example
+demo-go-sdk:
+	cd sdk/go && go run ./examples/basic
+
 # Help
 help:
 	@echo "X-Ray Makefile Commands:"
@@ -68,3 +79,6 @@ help:
 	@echo "  make rebuild      Rebuild and restart API container"
 	@echo "  make demo         Run the demo pipeline"
 	@echo "  make install-sdk  Install Python SDK in dev mode"
+	@echo "  make install-go-sdk Prepare Go SDK dependencies"
+	@echo "  make test-go-sdk  Run Go SDK tests"
+	@echo "  make demo-go-sdk  Run Go SDK example"

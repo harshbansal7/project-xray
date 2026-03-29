@@ -23,6 +23,12 @@ cd sdk/python
 pip install -e .
 ```
 
+Or install the Go SDK dependencies:
+
+```bash
+make install-go-sdk
+```
+
 ### 3. Instrument Your Pipeline
 
 ```python
@@ -105,6 +111,9 @@ make logs       # View API logs
 │   └── examples/
 ├── dashboard/           # Next.js dashboard
 ├── docker-compose.yml   # Full stack setup
+├── sdk/go/              # Go SDK
+│   ├── *.go             # SDK implementation
+│   └── examples/        # Go instrumentation examples
 └── ARCHITECTURE.md      # Design decisions + trade-offs
 ```
 
@@ -133,7 +142,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed design rationale.
 ## Known Limitations
 
 1. **No authentication**: API is currently open. Production would need API keys + RBAC.
-2. **Python SDK only**: Go/TypeScript SDKs not implemented yet.
+2. **TypeScript SDK missing**: Python and Go SDKs are implemented, TypeScript is not.
 3. **Limited query patterns**: Complex queries require client-side filtering.
 4. **Large item snapshots**: Storing full item state can get expensive.
 

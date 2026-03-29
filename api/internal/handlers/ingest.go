@@ -296,7 +296,9 @@ func (h *IngestHandler) BatchCreateEvents(w http.ResponseWriter, r *http.Request
 			StepType:      models.StepType(e.StepType),
 			CaptureMode:   captureMode,
 			InputCount:    e.InputCount,
+			InputSample:   e.InputSample,
 			OutputCount:   e.OutputCount,
+			OutputSample:  e.OutputSample,
 			Annotations:   e.Annotations,
 			StartedAt:     startedAt,
 		}

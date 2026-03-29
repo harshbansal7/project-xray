@@ -92,7 +92,7 @@ export default function PipelinesPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl animate-fade-in">
+    <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 2xl:px-10 py-4 sm:py-6 animate-fade-in">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text-primary)]">Pipelines</h1>
@@ -102,7 +102,7 @@ export default function PipelinesPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total Pipelines"
           value={pipelines.length}
@@ -133,7 +133,7 @@ export default function PipelinesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mb-8">
           {pipelines.map(pipeline => (
             <PipelineCard key={pipeline.id} pipeline={pipeline} />
           ))}
